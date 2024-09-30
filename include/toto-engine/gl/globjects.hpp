@@ -17,10 +17,12 @@ class GLBuffer : public GLPointerArray<
                      [](GLsizei n, GLuint* buffers) { glGenBuffers(n, buffers); },
                      [](GLsizei n, GLuint* buffers) { glDeleteBuffers(n, buffers); }, N> {
 public:
-    inline static void bind(const GLBuffer& buffer) { glBindBuffer(static_cast<GLenum>(TARGET), buffer.handle()); }
+    inline static void bind(const GLBuffer& buffer, size_t offset = 0) {
+        glBindBuffer(static_cast<GLenum>(TARGET), buffer.handle(offset));
+    }
     inline static void unbind() { glBindBuffer(static_cast<GLenum>(TARGET), 0); }
 
-    inline void bind() const { bind(*this); }
+    inline void bind(size_t offset = 0) const { bind(*this, offset); }
 
     template <typename T>
     void data(const std::vector<T>& data, GLenum usage) const {
@@ -34,10 +36,10 @@ class GLVertexArray : public GLPointerArray<
                           [](GLsizei n, GLuint* arrays) { glGenVertexArrays(n, arrays); },
                           [](GLsizei n, GLuint* arrays) { glDeleteVertexArrays(n, arrays); }, N> {
 public:
-    inline static void bind(const GLVertexArray& array) { glBindVertexArray(array.handle()); }
+    inline static void bind(const GLVertexArray& array, size_t offset = 0) { glBindVertexArray(array.handle(offset)); }
     inline static void unbind() { glBindVertexArray(0); }
 
-    inline void bind() const { bind(*this); }
+    inline void bind(size_t offset = 0) const { bind(*this, offset); }
 
     /**
      * @brief Set the Vertex Attrib Pointer

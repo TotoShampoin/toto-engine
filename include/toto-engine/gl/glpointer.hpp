@@ -40,8 +40,8 @@ private:
 template <GLConstructorTypeArray construct, GLDestructorTypeArray destruct, GLsizei N>
 class GLPointerArray {
 public:
-    GLPointerArray() { construct(N, &_handle); }
-    ~GLPointerArray() { destruct(N, &_handle); }
+    GLPointerArray() { construct(N, _handle); }
+    ~GLPointerArray() { destruct(N, _handle); }
     GLPointerArray(GLPointerArray&& other) {
         _handle = other._handle;
         other._handle = 0;
@@ -57,13 +57,14 @@ public:
     GLPointerArray(const GLPointerArray&) = delete;
     GLPointerArray& operator=(const GLPointerArray&) = delete;
 
-    inline GLuint handle() const { return _handle; }
-    inline GLuint operator*() const { return _handle; }
+    inline GLuint handle(size_t index = 0) const { return _handle[index]; }
+    inline GLuint operator[](size_t index) const { return _handle[index]; }
 
-    operator GLuint() const { return _handle; }
+    inline GLuint operator*() const { return _handle[0]; }
+    operator GLuint() const { return _handle[0]; }
 
 private:
-    GLuint _handle {0};
+    GLuint _handle[N] {};
 };
 
 } // namespace toto

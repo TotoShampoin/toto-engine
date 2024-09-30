@@ -3,8 +3,6 @@
 #include "toto-engine/import-gl.hpp"
 #include <stdexcept>
 #include <string>
-#include <type_traits>
-#include <vector>
 
 namespace toto {
 
@@ -94,10 +92,12 @@ class GLTexture : public GLPointerArray<
                       [](GLsizei n, GLuint* textures) { glGenTextures(n, textures); },
                       [](GLsizei n, GLuint* textures) { glDeleteTextures(n, textures); }, N> {
 public:
-    inline static void bind(const GLTexture& texture) { glBindTexture(static_cast<GLenum>(TARGET), texture.handle()); }
+    inline static void bind(const GLTexture& texture, size_t offset = 0) {
+        glBindTexture(static_cast<GLenum>(TARGET), texture.handle(offset));
+    }
     inline static void unbind() { glBindTexture(static_cast<GLenum>(TARGET), 0); }
 
-    inline void bind() const { bind(*this); }
+    inline void bind(size_t offset = 0) const { bind(*this, offset); }
     inline void active(uint index) const { glActiveTexture(GL_TEXTURE0 + index); }
 
     void parameter(GLenum parameter, GLint value) const {
@@ -122,5 +122,53 @@ public:
 };
 
 using GLTexture2D = GLTexture<GLTextureTarget::Texture2D>;
+
+template <GLsizei N = 0>
+class GLFrameBuffer : public GLPointerArray<
+                          [](GLsizei n, GLuint* framebuffers) { glGenFramebuffers(n, framebuffers); },
+                          [](GLsizei n, GLuint* framebuffers) { glDeleteFramebuffers(n, framebuffers); }, N> {
+public:
+    static void bind(const GLFrameBuffer& framebuffer, size_t offset = 0) {
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.handle(offset));
+    }
+    static void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+
+    void bind(size_t offset = 0) const { bind(*this, offset); }
+
+    GLenum checkStatus() const {
+        bind(*this);
+        return glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    }
+
+    void texture2D(GLenum attachment, const GLTexture2D& texture, GLint level) const {
+        bind(*this);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.handle(), level);
+    }
+
+private:
+};
+
+template <GLsizei N = 0>
+class GLRenderBuffer : public GLPointerArray<
+                           [](GLsizei n, GLuint* renderbuffers) { glGenRenderbuffers(n, renderbuffers); },
+                           [](GLsizei n, GLuint* renderbuffers) { glDeleteRenderbuffers(n, renderbuffers); }, N> {
+public:
+    static void bind(const GLRenderBuffer& renderbuffer, size_t offset = 0) {
+        glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer.handle(offset));
+    }
+    static void unbind() { glBindRenderbuffer(GL_RENDERBUFFER, 0); }
+
+    void bind(size_t offset = 0) const { bind(*this, offset); }
+
+    void storage(GLenum internal_format, GLsizei width, GLsizei height) const {
+        bind(*this);
+        glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height);
+    }
+
+    void attach(GLenum attachment) const {
+        bind(*this);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, this->handle());
+    }
+};
 
 } // namespace toto
