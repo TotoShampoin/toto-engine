@@ -4,8 +4,8 @@ A simple rendering engine that uses OpenGL.
 
 ## TODO
 
-- [ ] Framebuffers, with multiframes rendering
-  - [ ] Deferred rendering
+- [x] Framebuffers, with multiframes rendering
+  - [x] Deferred rendering
 - [ ] HDRI and IBL
 - [ ] Bone animations
 - [ ] Model loading
