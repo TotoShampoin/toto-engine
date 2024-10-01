@@ -40,6 +40,8 @@ public:
         glUniform1i(_handle, unit);
     }
 
+    uint handle() const { return _handle; }
+
 private:
     uint _handle;
 };

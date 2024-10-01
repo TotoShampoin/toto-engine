@@ -26,22 +26,28 @@ void Window::initGL() {
     throw std::runtime_error("Failed to initialize GLAD\n");
 }
 
-void Window::makeContextCurrent() {
+void Window::makeContextCurrent() const {
     glfwMakeContextCurrent(_handle);
 }
 
 void Window::pollEvents() {
     glfwPollEvents();
 }
-void Window::swapBuffers() {
+void Window::swapBuffers() const {
     glfwSwapBuffers(_handle);
 }
-bool Window::shouldClose() {
+bool Window::shouldClose() const {
     return glfwWindowShouldClose(_handle);
 }
 
-GLFWwindow* Window::handle() {
+GLFWwindow* Window::handle() const {
     return _handle;
+}
+
+std::tuple<int, int> Window::size() const {
+    int width, height;
+    glfwGetWindowSize(_handle, &width, &height);
+    return {width, height};
 }
 
 GLFW::GLFW() {

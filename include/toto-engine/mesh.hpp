@@ -41,7 +41,10 @@ struct Material {
     std::optional<std::reference_wrapper<GLTexture2D>> height_map;
 };
 
-std::string pbrMaterialVertexShader();
+std::string materialVertexShader();
+std::string screenMaterialVertexShader();
 std::string pbrMaterialFragmentShader();
+std::string deferredMaterialFragmentShader();
+std::string lightingFragmentShader();
 
-}; // namespace toto
+} // namespace toto

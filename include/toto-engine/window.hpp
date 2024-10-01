@@ -1,5 +1,6 @@
 #pragma once
 #include <toto-engine/import-gl.hpp>
+#include <tuple>
 
 namespace toto {
 
@@ -12,13 +13,15 @@ public:
 
     static void initGL();
 
-    void makeContextCurrent();
+    void makeContextCurrent() const;
 
     static void pollEvents();
-    void swapBuffers();
-    bool shouldClose();
+    void swapBuffers() const;
+    bool shouldClose() const;
 
-    GLFWwindow* handle();
+    GLFWwindow* handle() const;
+
+    std::tuple<int, int> size() const;
 
 private:
     GLFWwindow* _handle;

@@ -32,11 +32,10 @@ public:
     void setLight(const Light& light);
 
     void render(const Model& model);
-
     void render(const Model& model, const Material& material, const Transform& transform);
 
 private:
-    GLProgram _program = loadRenderShaderSource(pbrMaterialVertexShader(), pbrMaterialFragmentShader());
+    GLProgram _program = loadRenderShaderSource(materialVertexShader(), pbrMaterialFragmentShader());
     std::unordered_map<std::string, Uniform> _uniforms;
 
     void _setMap(const std::string& name, const std::optional<std::reference_wrapper<GLTexture2D>>& map, uint index);

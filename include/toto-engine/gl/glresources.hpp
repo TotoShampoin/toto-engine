@@ -123,7 +123,7 @@ public:
 
 using GLTexture2D = GLTexture<GLTextureTarget::Texture2D>;
 
-template <GLsizei N = 0>
+template <GLsizei N = 1>
 class GLFrameBuffer : public GLPointerArray<
                           [](GLsizei n, GLuint* framebuffers) { glGenFramebuffers(n, framebuffers); },
                           [](GLsizei n, GLuint* framebuffers) { glDeleteFramebuffers(n, framebuffers); }, N> {
@@ -148,7 +148,7 @@ public:
 private:
 };
 
-template <GLsizei N = 0>
+template <GLsizei N = 1>
 class GLRenderBuffer : public GLPointerArray<
                            [](GLsizei n, GLuint* renderbuffers) { glGenRenderbuffers(n, renderbuffers); },
                            [](GLsizei n, GLuint* renderbuffers) { glDeleteRenderbuffers(n, renderbuffers); }, N> {
@@ -160,13 +160,13 @@ public:
 
     void bind(size_t offset = 0) const { bind(*this, offset); }
 
-    void storage(GLenum internal_format, GLsizei width, GLsizei height) const {
-        bind(*this);
+    void storage(GLenum internal_format, GLsizei width, GLsizei height, size_t offset = 0) const {
+        bind(*this, offset);
         glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height);
     }
 
-    void attach(GLenum attachment) const {
-        bind(*this);
+    void attach(GLenum attachment, size_t offset = 0) const {
+        bind(*this, offset);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, this->handle());
     }
 };
