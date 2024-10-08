@@ -14,8 +14,6 @@ std::string cubemapVertexShader();
 std::string cubemapFragmentShader();
 std::string irradianceFragmentShader();
 
-// Nothing works *sad face*
-
 class Skybox {
 public:
     Skybox(uint res = 512);

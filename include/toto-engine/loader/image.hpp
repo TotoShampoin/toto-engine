@@ -29,10 +29,6 @@ Image2D<float> loadImage2Df(const std::filesystem::path& path);
 
 template <typename TYPE>
 GLTexture2D generateTexture2D(const Image2D<TYPE>& image, const TextureParameters& parameters = {}) {
-    std::println(
-        std::cout, "{}x{}x{}, {}", image.width, image.height, image.channels,
-        std::is_same_v<TYPE, unsigned char> ? "unsigned char" : "float"
-    );
     GLTexture2D texture;
     const GLenum format = [&] {
         switch (image.channels) {
@@ -43,7 +39,6 @@ GLTexture2D generateTexture2D(const Image2D<TYPE>& image, const TextureParameter
         default: throw std::runtime_error("Invalid number of channels");
         }
     }();
-    std::println(std::cout, "format: {}", format);
     const GLenum type = std::is_same_v<TYPE, unsigned char> ? GL_UNSIGNED_BYTE : GL_FLOAT;
     const GLenum internal_format = format;
     texture.bind();
