@@ -7,6 +7,9 @@ A simple rendering engine that uses OpenGL.
 - [x] Framebuffers, with multiframes rendering
   - [x] Deferred rendering
 - [ ] HDRI and IBL
+  - [x] Skybox
+  - [x] Irradiance map
+  - [ ] Specular IBL
 - [ ] Normal mapping
 - [ ] Line objects
   - [ ] Line shapes (arrows, gizmo)
