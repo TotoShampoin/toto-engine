@@ -9,6 +9,7 @@
 #include "toto-engine/utils/shapes.hpp"
 #include "toto-engine/utils/transform.hpp"
 #include <functional>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -37,7 +38,7 @@ public:
     void draw(const Model& model, const Material& material, const Transform& transform);
 
     void beginRender();
-    void endRender();
+    void endRender(const std::optional<GLFrameBuffer<>>& framebuffer = std::nullopt);
 
 private:
     GLFrameBuffer<> _g_buffer;

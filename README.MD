@@ -7,13 +7,17 @@ A simple rendering engine that uses OpenGL.
 - [x] Framebuffers, with multiframes rendering
   - [x] Deferred rendering
 - [ ] HDRI and IBL
-- [ ] Bone animations
-- [ ] Model loading
-  - [ ] OBJ/MTL
-  - [ ] GLTF
+- [ ] Normal mapping
 - [ ] Line objects
   - [ ] Line shapes (arrows, gizmo)
   - [ ] Wireframes
 - [ ] Cull face options
 - [ ] Camera culling
-- [ ] Occlusion culling?
+- [ ] Render list
+  - [ ] Render ordering
+  - [ ] Occlusion culling
+- [ ] Model loading
+  - [ ] OBJ/MTL
+  - [ ] GLTF
+- [ ] Bone animations
+- [ ] Code documentation

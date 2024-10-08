@@ -24,12 +24,12 @@ struct Model {
     Model(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
 };
 struct Material {
-    glm::vec3 albedo;
-    float alpha;
-    float metallic;
-    float roughness;
-    float ao;
-    glm::vec3 emissive;
+    glm::vec3 albedo = {1.0f, 1.0f, 1.0f};
+    float alpha = 1.0f;
+    float metallic = 0.0f;
+    float roughness = 0.5f;
+    float ao = 1.0f;
+    glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
 
     std::optional<std::reference_wrapper<GLTexture2D>> albedo_map;
     std::optional<std::reference_wrapper<GLTexture2D>> alpha_map;

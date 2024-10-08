@@ -1,5 +1,7 @@
 #pragma once
 #include "toto-engine/import-gl.hpp"
+#include <algorithm>
+#include <iterator>
 
 namespace toto {
 
@@ -43,8 +45,10 @@ public:
     GLPointerArray() { construct(N, _handle); }
     ~GLPointerArray() { destruct(N, _handle); }
     GLPointerArray(GLPointerArray&& other) {
-        _handle = other._handle;
-        other._handle = 0;
+        // _handle = other._handle;
+        // other._handle = 0;
+        std::copy(std::begin(other._handle), std::end(other._handle), std::begin(_handle));
+        std::fill(std::begin(other._handle), std::end(other._handle), 0);
     }
     GLPointerArray& operator=(GLPointerArray&& other) {
         if (this == &other)

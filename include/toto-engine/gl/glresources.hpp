@@ -140,9 +140,12 @@ public:
         return glCheckFramebufferStatus(GL_FRAMEBUFFER);
     }
 
-    void texture2D(GLenum attachment, const GLTexture2D& texture, GLint level) const {
+    template <GLTextureTarget TARGET>
+    void texture2D(
+        GLenum attachment, const GLTexture<TARGET>& texture, GLint level, GLenum target = static_cast<GLenum>(TARGET)
+    ) const {
         bind(*this);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.handle(), level);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, target, texture.handle(), level);
     }
 
 private:

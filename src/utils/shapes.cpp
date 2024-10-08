@@ -22,36 +22,36 @@ Model quad(float width, float height) {
 
 Model cube(float width, float height, float depth) {
     auto vertices = std::vector<Vertex>({
-        //
+        // front
         {{-width / 2, -height / 2, -depth / 2}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
         { {width / 2, -height / 2, -depth / 2}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},
         {  {width / 2, height / 2, -depth / 2}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
         { {-width / 2, height / 2, -depth / 2}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},
-        //
+        // back
         { {-width / 2, -height / 2, depth / 2},  {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
         {  {width / 2, -height / 2, depth / 2},  {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
         {   {width / 2, height / 2, depth / 2},  {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
         {  {-width / 2, height / 2, depth / 2},  {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-        //
-        {{-width / 2, -height / 2, -depth / 2}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        { {-width / 2, -height / 2, depth / 2}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-        {  {-width / 2, height / 2, depth / 2}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-        { {-width / 2, height / 2, -depth / 2}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-        //
+        // right
         { {width / 2, -height / 2, -depth / 2},  {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
         {  {width / 2, -height / 2, depth / 2},  {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
         {   {width / 2, height / 2, depth / 2},  {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
         {  {width / 2, height / 2, -depth / 2},  {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-        //
-        {{-width / 2, -height / 2, -depth / 2}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
-        { {width / 2, -height / 2, -depth / 2}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},
-        {  {width / 2, -height / 2, depth / 2}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},
-        { {-width / 2, -height / 2, depth / 2}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}},
-        //
+        // left
+        {{-width / 2, -height / 2, -depth / 2}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        { {-width / 2, -height / 2, depth / 2}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+        {  {-width / 2, height / 2, depth / 2}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        { {-width / 2, height / 2, -depth / 2}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+        // top
         { {-width / 2, height / 2, -depth / 2},  {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
         {  {width / 2, height / 2, -depth / 2},  {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
         {   {width / 2, height / 2, depth / 2},  {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
         {  {-width / 2, height / 2, depth / 2},  {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+        // bottom
+        {{-width / 2, -height / 2, -depth / 2}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
+        { {width / 2, -height / 2, -depth / 2}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},
+        {  {width / 2, -height / 2, depth / 2}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},
+        { {-width / 2, -height / 2, depth / 2}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}},
     });
     auto indices = std::vector<uint>({
         0,  1,  3,  1,  2,  3,  //

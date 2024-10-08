@@ -1,4 +1,5 @@
 #include "toto-engine/utils/deferred_renderer.hpp"
+#include "toto-engine/import-gl.hpp"
 #include "toto-engine/mesh.hpp"
 
 namespace toto {
@@ -154,21 +155,23 @@ void DeferredRenderer::beginRender() {
     _deferred.use();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void DeferredRenderer::endRender() {
+void DeferredRenderer::endRender(const std::optional<GLFrameBuffer<>>& framebuffer) {
+    if (framebuffer.has_value()) {
+        framebuffer->bind();
+    } else {
+        GLFrameBuffer<>::unbind();
+    }
+
     _lighting.use();
     _uniforms_lighting["u_position"].set(_g_position, 0);
     _uniforms_lighting["u_normal"].set(_g_normal, 1);
     _uniforms_lighting["u_albedo"].set(_g_albedo, 2);
     _uniforms_lighting["u_metallic_roughness_ao"].set(_g_metallic_roughness_ao, 3);
-
-    unbindGBuffer();
-    glDisable(GL_DEPTH_TEST);
-    glClear(GL_COLOR_BUFFER_BIT);
-    _quad.vao.bind();
-    glDrawElements(GL_TRIANGLES, _quad.index_count, GL_UNSIGNED_INT, nullptr);
-    _quad.vao.unbind();
+    draw(_quad);
     _g_position.unbind();
     _g_normal.unbind();
     _g_albedo.unbind();
