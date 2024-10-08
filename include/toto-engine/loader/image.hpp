@@ -2,8 +2,6 @@
 
 #include "toto-engine/gl/glresources.hpp"
 #include <filesystem>
-#include <iostream>
-#include <ostream>
 #include <vector>
 
 namespace toto {
