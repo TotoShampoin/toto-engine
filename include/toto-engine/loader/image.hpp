@@ -48,4 +48,11 @@ GLTexture2D generateTexture2D(const Image2D<TYPE>& image, const TextureParameter
     return texture;
 }
 
+inline GLTexture2D loadTexture2D(const std::filesystem::path& path, const TextureParameters& parameters = {}) {
+    return generateTexture2D(loadImage2D(path), parameters);
+}
+inline GLTexture2D loadTexture2Df(const std::filesystem::path& path, const TextureParameters& parameters = {}) {
+    return generateTexture2D(loadImage2Df(path), parameters);
+}
+
 } // namespace toto
