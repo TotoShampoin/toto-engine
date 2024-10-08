@@ -1,6 +1,8 @@
 #include "toto-engine/utils/deferred_renderer.hpp"
 #include "toto-engine/import-gl.hpp"
 #include "toto-engine/mesh.hpp"
+#include "toto-engine/utils/camera.hpp"
+#include "toto-engine/utils/skybox.hpp"
 
 namespace toto {
 
@@ -65,6 +67,7 @@ DeferredRenderer::DeferredRenderer(int width, int height) {
     _uniforms_lighting["u_light_direction"] = Uniform(_lighting, "u_light_direction");
     _uniforms_lighting["u_light_intensity"] = Uniform(_lighting, "u_light_intensity");
     _uniforms_lighting["u_light_color"] = Uniform(_lighting, "u_light_color");
+    _uniforms_lighting["u_irradiance_map"] = Uniform(_lighting, "u_irradiance_map");
 }
 
 void DeferredRenderer::useDeferredProgram() {
@@ -117,6 +120,10 @@ void DeferredRenderer::setCamera(const Camera& camera) {
     _uniforms_deferred["u_projection"].set(camera.projectionMatrix());
     useLightingProgram();
     _uniforms_lighting["u_view"].set(camera.viewMatrix());
+}
+void DeferredRenderer::setSkybox(const Skybox& skybox) {
+    // _uniforms_lighting["u_irradiance_map"].set(skybox.irradiance(), 4);
+    _skybox = &skybox;
 }
 
 void DeferredRenderer::setMaterial(const Material& material) {
@@ -171,6 +178,7 @@ void DeferredRenderer::endRender(const std::optional<GLFrameBuffer<>>& framebuff
     _uniforms_lighting["u_normal"].set(_g_normal, 1);
     _uniforms_lighting["u_albedo"].set(_g_albedo, 2);
     _uniforms_lighting["u_metallic_roughness_ao"].set(_g_metallic_roughness_ao, 3);
+    _uniforms_lighting["u_irradiance_map"].set(_skybox->irradiance(), 4);
     draw(_quad);
     _g_position.unbind();
     _g_normal.unbind();

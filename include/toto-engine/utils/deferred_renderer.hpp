@@ -7,6 +7,7 @@
 #include "toto-engine/utils/camera.hpp"
 #include "toto-engine/utils/light.hpp"
 #include "toto-engine/utils/shapes.hpp"
+#include "toto-engine/utils/skybox.hpp"
 #include "toto-engine/utils/transform.hpp"
 #include <functional>
 #include <optional>
@@ -31,6 +32,7 @@ public:
 
     void setTransform(const Transform& transform);
     void setCamera(const Camera& camera);
+    void setSkybox(const Skybox& skybox);
     void setMaterial(const Material& material);
     void setLight(const Light& light);
 
@@ -49,6 +51,7 @@ private:
     GLRenderBuffer<> _rboDepth;
 
     Model _quad = shape::quad(2.0f, 2.0f);
+    const Skybox* _skybox = nullptr;
 
     GLProgram _deferred = loadRenderShaderSource(materialVertexShader(), deferredMaterialFragmentShader());
     GLProgram _lighting = loadRenderShaderSource(screenMaterialVertexShader(), lightingFragmentShader());

@@ -13,6 +13,8 @@ uniform vec3 u_light_direction;
 uniform float u_light_intensity;
 uniform vec3 u_light_color;
 
+uniform samplerCube u_irradiance_map;
+
 uniform mat4 u_view;
 
 out vec4 f_color;
@@ -23,6 +25,9 @@ const float PI = 3.14159265359;
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -69,10 +74,12 @@ void main() {
 
     vec3 view_direction = normalize(-position.xyz);
 
+    float NdotV = max(dot(normal, view_direction), 0.0);
+
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
-    vec3 Lo = vec3(0.0);
+    vec3 light_out = vec3(0.0);
     {
         vec3 light_direction = mat3(u_view) * -u_light_direction;
         vec3 half_direction = normalize(light_direction + view_direction);
@@ -90,11 +97,19 @@ void main() {
         vec3 specular = numerator / denominator;
 
         float NdotL = max(dot(normal, light_direction), 0.0);
-        Lo += (kD * albedo / PI + specular) * u_light_color * NdotL;
+        light_out += (kD * albedo / PI + specular) * u_light_color * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 color = ambient + Lo;
+    vec3 ambient;
+    {
+        vec3 kS = fresnelSchlickRoughness(NdotV, F0, roughness);
+        vec3 kD = 1.0 - kS;
+        vec3 irradiance = texture(u_irradiance_map, normal).rgb;
+        vec3 diffuse = irradiance * albedo;
+        ambient = (kD * diffuse) * ao;
+    }
+
+    vec3 color = ambient + light_out;
 
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));

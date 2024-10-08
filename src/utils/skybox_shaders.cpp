@@ -4,6 +4,8 @@
 #include "../embed/skybox.vert.cpp"
 #include "../embed/skybox_cubemap.frag.cpp"
 #include "../embed/skybox_cubemap.vert.cpp"
+#include "../embed/skybox_irradiance.frag.cpp"
+#include <vector>
 
 namespace toto {
 
@@ -27,6 +29,12 @@ std::string cubemapVertexShader() {
 
 std::string cubemapFragmentShader() {
     std::vector<char> data(EMBED_SKYBOX_CUBEMAP_FRAG.begin(), EMBED_SKYBOX_CUBEMAP_FRAG.end());
+    data.push_back('\0');
+    return std::string(data.data());
+}
+
+std::string irradianceFragmentShader() {
+    std::vector<char> data(EMBED_SKYBOX_IRRADIANCE_FRAG.begin(), EMBED_SKYBOX_IRRADIANCE_FRAG.end());
     data.push_back('\0');
     return std::string(data.data());
 }

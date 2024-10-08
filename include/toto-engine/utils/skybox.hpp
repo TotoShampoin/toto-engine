@@ -12,15 +12,17 @@ std::string skyboxVertexShader();
 std::string skyboxFragmentShader();
 std::string cubemapVertexShader();
 std::string cubemapFragmentShader();
+std::string irradianceFragmentShader();
 
 // Nothing works *sad face*
 
 class Skybox {
 public:
-    Skybox();
-    Skybox(const GLTexture2D& hdri_texture);
+    Skybox(uint res = 512);
+    Skybox(const GLTexture2D& hdri_texture, uint res = 512);
 
     const GLTexture<GLTextureTarget::TextureCubeMap>& cubemap() const { return _cubemap; }
+    const GLTexture<GLTextureTarget::TextureCubeMap>& irradiance() const { return _irradiance; }
 
     void applyCamera(const Camera& camera) const;
     void applyCubemap() const;
@@ -36,14 +38,20 @@ protected:
 
 private:
     GLTexture<GLTextureTarget::TextureCubeMap> _cubemap;
-    GLFrameBuffer<> _framebuffer;
-    GLRenderBuffer<> _renderbuffer;
+    GLTexture<GLTextureTarget::TextureCubeMap> _irradiance;
+    GLFrameBuffer<> _framebuffer_cubemap;
+    GLRenderBuffer<> _renderbuffer_cubemap;
+    GLFrameBuffer<> _framebuffer_irradiance;
+    GLRenderBuffer<> _renderbuffer_irradiance;
+    uint _res;
 
     void _renderToCubemap(const GLTexture2D& hdri_texture);
-    void _generateCubemap();
+    void _generateCubemaps();
+    void _renderIrradiance();
 
-    static GLProgram& _cubemapProgram();
     static Model& _cubemapModel();
+    static GLProgram& _cubemapProgram();
+    static GLProgram& _irradianceProgram();
 };
 
 } // namespace toto
