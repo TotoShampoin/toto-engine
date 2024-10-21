@@ -119,6 +119,11 @@ public:
         bind(*this);
         glTexImage3D(target, level, internal_format, width, height, depth, border, format, type, data);
     }
+
+    void generateMipmap(GLenum target = static_cast<GLenum>(TARGET)) {
+        bind(*this);
+        glGenerateMipmap(target);
+    }
 };
 
 using GLTexture2D = GLTexture<GLTextureTarget::Texture2D>;

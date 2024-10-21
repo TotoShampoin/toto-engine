@@ -1,4 +1,5 @@
 #include "toto-engine/utils/skybox.hpp"
+#include "toto-engine/gl/gldebug.hpp"
 #include "toto-engine/gl/glresources.hpp"
 #include "toto-engine/import-gl.hpp"
 #include "toto-engine/loader/shader.hpp"
@@ -10,10 +11,12 @@ namespace toto {
 
 Skybox::Skybox(uint res)
     : _res(res) {
+    GLDebug::pushGroup("Create skybox");
+
     _generateCubemaps();
     static_cast<void>(_cubemapModel());
     static_cast<void>(_cubemapProgram());
-    static_cast<void>(skyboxModel());
+    static_cast<void>(skyboxCubemapModel());
     auto& program = skyboxProgram();
     auto& uniforms = skyboxUniforms();
 
@@ -21,10 +24,14 @@ Skybox::Skybox(uint res)
     uniforms["u_cubemap"] = Uniform(program, "u_cubemap");
     uniforms["u_projection"] = Uniform(program, "u_projection");
     uniforms["u_view"] = Uniform(program, "u_view");
+
+    GLDebug::popGroup();
 }
 
 Skybox::Skybox(const GLTexture2D& hdri_texture, uint res)
     : Skybox(res) {
+    GLDebug::pushGroup("Precompute skybox");
+
     GLFrameBuffer<>::bind(_framebuffer_cubemap);
     _renderbuffer_cubemap.storage(GL_DEPTH_COMPONENT24, _res, _res);
     _renderbuffer_cubemap.attach(GL_DEPTH_ATTACHMENT);
@@ -35,6 +42,9 @@ Skybox::Skybox(const GLTexture2D& hdri_texture, uint res)
 
     _renderToCubemap(hdri_texture);
     _renderIrradiance();
+    _renderPrefiltered();
+
+    GLDebug::popGroup();
 }
 
 void Skybox::applyCamera(const Camera& camera) const {
@@ -55,8 +65,10 @@ void Skybox::applyCubemap() const {
 }
 
 void Skybox::render(const Camera& camera) const {
+    GLDebug::pushGroup("Render Skybox");
+
     auto& program = skyboxProgram();
-    auto& model = skyboxModel();
+    auto& model = skyboxCubemapModel();
     auto& uniforms = skyboxUniforms();
     auto& texture = _cubemap;
 
@@ -67,11 +79,14 @@ void Skybox::render(const Camera& camera) const {
     applyCamera(camera);
     glDrawElements(GL_TRIANGLES, model.index_count, GL_UNSIGNED_INT, nullptr);
     model.vao.unbind();
+    glDepthFunc(GL_LESS);
+
+    GLDebug::popGroup();
 }
 
 void Skybox::_generateCubemaps() {
-    auto& cubemap = _cubemap;
-    auto& irradiance = _irradiance;
+    GLDebug::pushGroup("Generate cubemaps");
+
     auto generate = [](GLTexture<GLTextureTarget::TextureCubeMap>& map, uint res) {
         map.parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         map.parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -81,19 +96,37 @@ void Skybox::_generateCubemaps() {
         for (int i = 0; i < 6; i++) {
             map.image2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, res, res, 0, GL_RGB, GL_FLOAT, nullptr);
         }
+        map.generateMipmap();
     };
-    generate(cubemap, _res);
-    generate(irradiance, 32);
-}
-void Skybox::_renderToCubemap(const GLTexture2D& hdri_texture) {
-    auto& program = _cubemapProgram();
-    auto& model = _cubemapModel();
-    auto& cubemap = _cubemap;
-    auto& framebuffer = _framebuffer_cubemap;
-    auto& renderbuffer = _renderbuffer_cubemap;
+    generate(_cubemap, _res);
+    generate(_irradiance, 32);
+    // generate(_prefiltered, 128);
+    {
+        _prefiltered.bind();
+        _prefiltered.parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        _prefiltered.parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        _prefiltered.parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        _prefiltered.parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        _prefiltered.parameter(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        for (int i = 0; i < 6; i++) {
+            _prefiltered.image2D(
+                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 128, 128, 0, GL_RGB, GL_FLOAT, nullptr
+            );
+        }
+        _prefiltered.generateMipmap();
+    }
 
-    auto camera = Camera::Perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-    std::tuple<glm::vec3, glm::vec3> camera_target_and_up[] = {
+    GLDebug::popGroup();
+}
+
+template <GLTextureTarget TARGET>
+void renderCubemap(
+    GLFrameBuffer<>& framebuffer, GLTexture<GLTextureTarget::TextureCubeMap>& output_cubemap,
+    const GLTexture<TARGET>& input_texture, GLProgram& program, Uniform& u_texture, Uniform& u_projection,
+    Uniform& u_view, int width, int height, int mip = 0
+) {
+    static auto camera = Camera::Perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+    static std::tuple<glm::vec3, glm::vec3> camera_target_and_up[] = {
         { glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)},
         {glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)},
         { glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)},
@@ -101,28 +134,49 @@ void Skybox::_renderToCubemap(const GLTexture2D& hdri_texture) {
         { glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)},
         { glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f)},
     };
+    static auto& model = skyboxCubemapModel();
 
     framebuffer.bind();
     model.vao.bind();
     program.use();
-    Uniform(program, "u_hdri").set(hdri_texture, 0);
-    Uniform(program, "u_projection").set(camera.projectionMatrix());
-    auto u_view = Uniform(program, "u_view");
-    glViewport(0, 0, _res, _res);
+
+    u_texture.set(input_texture, 0);
+    u_projection.set(camera.projectionMatrix());
+
+    glViewport(0, 0, width, height);
     for (int i = 0; i < 6; i++) {
         const auto& [camera_target, camera_up] = camera_target_and_up[i];
         camera.lookAt(camera_target, camera_up);
         u_view.set(camera.viewMatrix());
 
-        framebuffer.texture2D(GL_COLOR_ATTACHMENT0, cubemap, 0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+        framebuffer.texture2D(GL_COLOR_ATTACHMENT0, output_cubemap, mip, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, model.index_count, GL_UNSIGNED_INT, nullptr);
     }
     model.vao.unbind();
     framebuffer.unbind();
 }
-// TODO: DRY
+
+void Skybox::_renderToCubemap(const GLTexture2D& hdri_texture) {
+    GLDebug::pushGroup("Cubemap");
+
+    auto& program = _cubemapProgram();
+    auto& model = _cubemapModel();
+    auto& cubemap = _cubemap;
+    auto& framebuffer = _framebuffer_cubemap;
+    auto& renderbuffer = _renderbuffer_cubemap;
+
+    auto u_hdri = Uniform(program, "u_hdri");
+    auto u_projection = Uniform(program, "u_projection");
+    auto u_view = Uniform(program, "u_view");
+
+    renderCubemap(framebuffer, cubemap, hdri_texture, program, u_hdri, u_projection, u_view, _res, _res);
+
+    GLDebug::popGroup();
+}
 void Skybox::_renderIrradiance() {
+    GLDebug::pushGroup("Irradiance cubemap");
+
     auto& program = _irradianceProgram();
     auto& model = _cubemapModel();
     auto& cubemap = _cubemap;
@@ -130,34 +184,50 @@ void Skybox::_renderIrradiance() {
     auto& framebuffer = _framebuffer_irradiance;
     auto& renderbuffer = _renderbuffer_irradiance;
 
-    auto camera = Camera::Perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-    std::tuple<glm::vec3, glm::vec3> camera_target_and_up[] = {
-        { glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)},
-        {glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)},
-        { glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)},
-        { glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)},
-        { glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)},
-        { glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f)},
-    };
-
-    model.vao.bind();
-    framebuffer.bind();
-    program.use();
-    Uniform(program, "u_cubemap").set(cubemap, 0);
-    Uniform(program, "u_projection").set(camera.projectionMatrix());
+    auto u_cubemap = Uniform(program, "u_cubemap");
+    auto u_projection = Uniform(program, "u_projection");
     auto u_view = Uniform(program, "u_view");
-    glViewport(0, 0, 32, 32);
-    for (unsigned int i = 0; i < 6; ++i) {
-        const auto& [camera_target, camera_up] = camera_target_and_up[i];
-        camera.lookAt(camera_target, camera_up);
-        u_view.set(camera.viewMatrix());
 
-        framebuffer.texture2D(GL_COLOR_ATTACHMENT0, irradiance, 0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glDrawElements(GL_TRIANGLES, model.index_count, GL_UNSIGNED_INT, nullptr);
+    renderCubemap(framebuffer, irradiance, cubemap, program, u_cubemap, u_projection, u_view, 32, 32);
+
+    GLDebug::popGroup();
+}
+void Skybox::_renderPrefiltered() {
+    GLDebug::pushGroup("Prefiltered cubemap");
+
+    auto& program = _prefilteredProgram();
+    auto& model = _cubemapModel();
+    auto& cubemap = _cubemap;
+    auto& prefiltered = _prefiltered;
+    auto& framebuffer = _framebuffer_prefiltered;
+    auto& renderbuffer = _renderbuffer_prefiltered;
+
+    program.use();
+
+    auto u_cubemap = Uniform(program, "u_cubemap");
+    auto u_projection = Uniform(program, "u_projection");
+    auto u_view = Uniform(program, "u_view");
+    auto u_roughness = Uniform(program, "u_roughness");
+
+    unsigned int max_mip_levels = 5;
+    for (unsigned int mip = 0; mip < max_mip_levels; mip++) {
+        unsigned int mip_width = 128 * std::pow(0.5, mip);
+        unsigned int mip_height = 128 * std::pow(0.5, mip);
+
+        framebuffer.bind();
+        renderbuffer.storage(GL_DEPTH_COMPONENT24, mip_width, mip_height);
+        renderbuffer.attach(GL_DEPTH_ATTACHMENT);
+
+        glViewport(0, 0, mip_width, mip_height);
+
+        float roughness = (float)mip / (float)(max_mip_levels - 1);
+        u_roughness.set(roughness);
+        renderCubemap(
+            framebuffer, prefiltered, cubemap, program, u_cubemap, u_projection, u_view, mip_width, mip_height, mip
+        );
     }
-    model.vao.unbind();
-    framebuffer.unbind();
+
+    GLDebug::popGroup();
 }
 
 GLProgram& Skybox::skyboxProgram() {
@@ -174,8 +244,7 @@ std::unordered_map<std::string, Uniform>& Skybox::skyboxUniforms() {
 }
 
 Model& Skybox::_cubemapModel() {
-    static Model model = shape::cube(2.0f, 2.0f, 2.0f);
-    return model;
+    return skyboxCubemapModel();
 }
 GLProgram& Skybox::_cubemapProgram() {
     static GLProgram program = loadRenderShaderSource(cubemapVertexShader(), cubemapFragmentShader());
@@ -184,6 +253,15 @@ GLProgram& Skybox::_cubemapProgram() {
 GLProgram& Skybox::_irradianceProgram() {
     static GLProgram program = loadRenderShaderSource(cubemapVertexShader(), irradianceFragmentShader());
     return program;
+}
+GLProgram& Skybox::_prefilteredProgram() {
+    static GLProgram program = loadRenderShaderSource(cubemapVertexShader(), prefilterFragmentShader());
+    return program;
+}
+
+Model& skyboxCubemapModel() {
+    static Model model = shape::cube(2.0f, 2.0f, 2.0f);
+    return model;
 }
 
 }; // namespace toto

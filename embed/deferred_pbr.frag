@@ -14,6 +14,8 @@ uniform float u_light_intensity;
 uniform vec3 u_light_color;
 
 uniform samplerCube u_irradiance_map;
+uniform samplerCube u_prefiltered_map;
+uniform sampler2D u_brdf_lut;
 
 uniform mat4 u_view;
 
@@ -107,7 +109,15 @@ void main() {
         kD *= 1.0 - metallic;
         vec3 irradiance = texture(u_irradiance_map, normal).rgb;
         vec3 diffuse = irradiance * albedo;
-        ambient = (kD * diffuse) * ao;
+
+        vec3 R = reflect(-view_direction, normal);
+        const float MAX_REFLECTION_LOD = 4.0;
+        vec3 prefiltered_color = textureLod(u_prefiltered_map, R, roughness * MAX_REFLECTION_LOD).rgb;
+        vec2 env_brdf = texture(u_brdf_lut, vec2(NdotV, roughness)).rg;
+        vec3 specular = prefiltered_color * (kS * env_brdf.x + env_brdf.y);
+        // vec3 specular = texture(u_prefiltered_map, R, roughness).rgb;
+
+        ambient = (kD * diffuse + specular) * ao;
     }
 
     vec3 color = ambient + light_out;

@@ -17,7 +17,7 @@ Model quad(float width, float height) {
     auto indices = std::vector<uint>({
         0, 1, 3, 1, 2, 3, //
     });
-    return Model {vertices, indices};
+    return Model {vertices, indices, "Quad"};
 }
 
 Model cube(float width, float height, float depth) {
@@ -61,7 +61,7 @@ Model cube(float width, float height, float depth) {
         16, 17, 19, 17, 18, 19, //
         20, 21, 23, 21, 22, 23, //
     });
-    return Model {vertices, indices};
+    return Model {vertices, indices, "Cube"};
 }
 
 Model sphere(float radius, uint slices, uint stacks) {
@@ -93,7 +93,7 @@ Model sphere(float radius, uint slices, uint stacks) {
             indices.push_back((i - 1) * slices + (j + 1) % slices + 1);
         }
     }
-    return Model {vertices, indices};
+    return Model {vertices, indices, "Sphere"};
 }
 
 Model cylinder(float radius, float height, uint slices) {
@@ -162,7 +162,7 @@ Model cylinder(float radius, float height, uint slices) {
         indices.push_back(idx + 2 * ((i + 1) % slices) + 1);
         indices.push_back(idx + 2 * ((i + 1) % slices));
     }
-    return Model {vertices, indices};
+    return Model {vertices, indices, "Cylinder"};
 }
 
 Model cone(float radius, float height, uint slices) {
@@ -186,7 +186,7 @@ Model cone(float radius, float height, uint slices) {
         indices.push_back(i + 1);
         indices.push_back((i + 1) % slices + 1);
     }
-    return Model {vertices, indices};
+    return Model {vertices, indices, "Cone"};
 }
 
 // https://github.com/mrdoob/three.js/blob/dev/src/geometries/TorusGeometry.js
@@ -228,7 +228,7 @@ Model torus(float major_radius, float minor_radius, uint major_slices, uint mino
             indices.push_back(d);
         }
     }
-    return Model {vertices, indices};
+    return Model {vertices, indices, "Torus"};
 }
 
 Model disk(float radius, uint slices) {
@@ -252,7 +252,7 @@ Model disk(float radius, uint slices) {
         indices.push_back(i + 1);
         indices.push_back((i + 1) % slices + 1);
     }
-    return Model {vertices, indices};
+    return Model {vertices, indices, "Disk"};
 }
 
 Model capsule(float radius, float height, uint slices) {
@@ -338,7 +338,7 @@ Model capsule(float radius, float height, uint slices) {
         indices.push_back(idx + 2 * ((i + 1) % slices) + 1);
         indices.push_back(idx + 2 * ((i + 1) % slices));
     }
-    return Model {vertices, indices};
+    return Model {vertices, indices, "Capsule"};
 }
 
 } // namespace shape

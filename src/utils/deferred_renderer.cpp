@@ -1,15 +1,28 @@
 #include "toto-engine/utils/deferred_renderer.hpp"
+#include "toto-engine/gl/gldebug.hpp"
+#include "toto-engine/gl/glresources.hpp"
 #include "toto-engine/import-gl.hpp"
 #include "toto-engine/mesh.hpp"
 #include "toto-engine/utils/camera.hpp"
+#include "toto-engine/utils/shapes.hpp"
 #include "toto-engine/utils/skybox.hpp"
+#include <format>
 
 namespace toto {
+
+Model& quad() {
+    static Model model = shape::quad(2.0f, 2.0f);
+    return model;
+}
 
 DeferredRenderer::DeferredRenderer()
     : DeferredRenderer(800, 600) {}
 
 DeferredRenderer::DeferredRenderer(int width, int height) {
+    GLDebug::pushGroup("Create deferred renderer");
+
+    _brdfLUT();
+
     _g_buffer.bind();
     _g_position.bind();
     _g_position.image2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
@@ -68,6 +81,10 @@ DeferredRenderer::DeferredRenderer(int width, int height) {
     _uniforms_lighting["u_light_intensity"] = Uniform(_lighting, "u_light_intensity");
     _uniforms_lighting["u_light_color"] = Uniform(_lighting, "u_light_color");
     _uniforms_lighting["u_irradiance_map"] = Uniform(_lighting, "u_irradiance_map");
+    _uniforms_lighting["u_prefiltered_map"] = Uniform(_lighting, "u_prefiltered_map");
+    _uniforms_lighting["u_brdf_lut"] = Uniform(_lighting, "u_brdf_lut");
+
+    GLDebug::popGroup();
 }
 
 void DeferredRenderer::useDeferredProgram() {
@@ -152,21 +169,30 @@ void DeferredRenderer::draw(const Model& model) {
 }
 
 void DeferredRenderer::draw(const Model& model, const Material& material, const Transform& transform) {
+    GLDebug::pushGroup(std::format("Draw model {} with material {}", model.name, material.name));
     setTransform(transform);
     setMaterial(material);
     draw(model);
+    GLDebug::popGroup();
 }
 
 void DeferredRenderer::beginRender() {
+    GLDebug::pushGroup("Deferred rendering");
+    GLDebug::pushGroup("Prepare frame");
+
     bindGBuffer();
     _deferred.use();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    GLDebug::popGroup();
 }
 
 void DeferredRenderer::endRender(const std::optional<GLFrameBuffer<>>& framebuffer) {
+    GLDebug::pushGroup("Render frame");
+
     if (framebuffer.has_value()) {
         framebuffer->bind();
     } else {
@@ -179,11 +205,16 @@ void DeferredRenderer::endRender(const std::optional<GLFrameBuffer<>>& framebuff
     _uniforms_lighting["u_albedo"].set(_g_albedo, 2);
     _uniforms_lighting["u_metallic_roughness_ao"].set(_g_metallic_roughness_ao, 3);
     _uniforms_lighting["u_irradiance_map"].set(_skybox->irradiance(), 4);
-    draw(_quad);
+    _uniforms_lighting["u_prefiltered_map"].set(_skybox->prefiltered(), 5);
+    _uniforms_lighting["u_brdf_lut"].set(_brdfLUT(), 6);
+    draw(quad());
     _g_position.unbind();
     _g_normal.unbind();
     _g_albedo.unbind();
     _g_metallic_roughness_ao.unbind();
+
+    GLDebug::popGroup();
+    GLDebug::popGroup();
 }
 
 void DeferredRenderer::_setMap(
@@ -197,6 +228,42 @@ void DeferredRenderer::_setMap(
         map->get().bind();
         _uniforms_deferred[map_name].set(map->get(), index);
     }
+}
+
+GLTexture2D& DeferredRenderer::_brdfLUT() {
+    static GLTexture2D lut = [&] {
+        GLDebug::pushGroup("Creating BRDF LUT");
+
+        GLTexture2D texture;
+        texture.bind();
+        texture.image2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, nullptr);
+        texture.parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        texture.parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        texture.parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        texture.parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        auto framebuffer = GLFrameBuffer<>();
+        auto renderbuffer = GLRenderBuffer<>();
+        auto program = loadRenderShaderSource(screenMaterialVertexShader(), brdfLUTFragmentShader());
+
+        framebuffer.bind();
+        renderbuffer.storage(GL_DEPTH_COMPONENT24, 512, 512);
+        framebuffer.texture2D(GL_COLOR_ATTACHMENT0, texture, 0);
+
+        glViewport(0, 0, 512, 512);
+        program.use();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        quad().vao.bind();
+        glDrawElements(GL_TRIANGLES, quad().index_count, GL_UNSIGNED_INT, nullptr);
+        quad().vao.unbind();
+        GLFrameBuffer<>::unbind();
+
+        GLDebug::popGroup();
+
+        return texture;
+    }();
+
+    return lut;
 }
 
 } // namespace toto

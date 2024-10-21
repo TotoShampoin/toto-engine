@@ -20,8 +20,13 @@ struct Model {
     GLVertexArray<> vao;
     GLBuffer<GLBufferTarget::ElementArray> ibo;
     GLsizei index_count;
+    std::string name;
 
-    Model(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
+    Model(
+        const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices,
+        const std::string& name = "Unnamed model"
+    );
+    ~Model();
 };
 struct Material {
     glm::vec3 albedo = {1.0f, 1.0f, 1.0f};
@@ -30,6 +35,7 @@ struct Material {
     float roughness = 0.5f;
     float ao = 1.0f;
     glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
+    std::string name = "Unnamed material";
 
     std::optional<std::reference_wrapper<GLTexture2D>> albedo_map;
     std::optional<std::reference_wrapper<GLTexture2D>> alpha_map;

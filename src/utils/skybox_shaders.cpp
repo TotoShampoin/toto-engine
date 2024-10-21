@@ -1,10 +1,12 @@
 #include "toto-engine/utils/skybox.hpp"
 
+#include "../embed/integrate_brdf.frag.cpp"
 #include "../embed/skybox.frag.cpp"
 #include "../embed/skybox.vert.cpp"
 #include "../embed/skybox_cubemap.frag.cpp"
 #include "../embed/skybox_cubemap.vert.cpp"
 #include "../embed/skybox_irradiance.frag.cpp"
+#include "../embed/skybox_prefilter.frag.cpp"
 #include <vector>
 
 namespace toto {
@@ -39,4 +41,16 @@ std::string irradianceFragmentShader() {
     return std::string(data.data());
 }
 
-} // namespace toto
+std::string prefilterFragmentShader() {
+    std::vector<char> data(EMBED_SKYBOX_PREFILTER_FRAG.begin(), EMBED_SKYBOX_PREFILTER_FRAG.end());
+    data.push_back('\0');
+    return std::string(data.data());
+}
+
+std::string brdfLUTFragmentShader() {
+    std::vector<char> data(EMBED_INTEGRATE_BRDF_FRAG.begin(), EMBED_INTEGRATE_BRDF_FRAG.end());
+    data.push_back('\0');
+    return std::string(data.data());
+}
+
+}; // namespace toto
