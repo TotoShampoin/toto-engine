@@ -6,19 +6,22 @@ A simple rendering engine that uses OpenGL.
 
 - [x] Framebuffers, with multiframes rendering
   - [x] Deferred rendering
-- [ ] HDRI and IBL
+- [x] HDRI and IBL
   - [x] Skybox
   - [x] Irradiance map
-  - [ ] Specular IBL
+  - [x] Specular IBL
 - [ ] Normal mapping
+- [ ] Refactor things to a `Drawable` class
+  - A drawable has 2 draw functions, for forward and deferred rendering
+  - Either could be disabled
 - [ ] Line objects
   - [ ] Line shapes (arrows, gizmo)
   - [ ] Wireframes
 - [ ] Cull face options
-- [ ] Camera culling
-- [ ] Render list
+- [ ] Render list, where meshes are added to be rendered
   - [ ] Render ordering
   - [ ] Occlusion culling
+  - [ ] Camera culling
 - [ ] Model loading
   - [ ] OBJ/MTL
   - [ ] GLTF
