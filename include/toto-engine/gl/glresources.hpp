@@ -37,9 +37,39 @@ enum class GLTextureCubemapTarget {
 };
 
 template <GLShaderType SHADER_TYPE>
-class GLShader : public GLPointer<
-                     []() { return glCreateShader(static_cast<GLenum>(SHADER_TYPE)); },
-                     [](GLuint shader) { glDeleteShader(shader); }> {
+inline GLuint createShader() {
+    return glCreateShader(static_cast<GLenum>(SHADER_TYPE));
+}
+inline void deleteShader(GLuint shader) {
+    glDeleteShader(shader);
+}
+inline GLuint createProgram() {
+    return glCreateProgram();
+}
+inline void deleteProgram(GLuint program) {
+    glDeleteProgram(program);
+}
+inline void genTextures(GLsizei n, GLuint* textures) {
+    glGenTextures(n, textures);
+}
+inline void deleteTextures(GLsizei n, GLuint* textures) {
+    glDeleteTextures(n, textures);
+}
+inline void genFramebuffers(GLsizei n, GLuint* framebuffers) {
+    glGenFramebuffers(n, framebuffers);
+}
+inline void deleteFramebuffers(GLsizei n, GLuint* framebuffers) {
+    glDeleteFramebuffers(n, framebuffers);
+}
+inline void genRenderbuffers(GLsizei n, GLuint* renderbuffers) {
+    glGenRenderbuffers(n, renderbuffers);
+}
+inline void deleteRenderbuffers(GLsizei n, GLuint* renderbuffers) {
+    glDeleteRenderbuffers(n, renderbuffers);
+}
+
+template <GLShaderType SHADER_TYPE>
+class GLShader : public GLPointer<createShader<SHADER_TYPE>, deleteShader> {
 public:
     inline void source(const std::string& source) const {
         const char* c_source = source.c_str();
@@ -58,8 +88,7 @@ public:
     }
 };
 
-class GLProgram
-    : public GLPointer<[]() { return glCreateProgram(); }, [](GLuint program) { glDeleteProgram(program); }> {
+class GLProgram : public GLPointer<createProgram, deleteProgram> {
 public:
     template <GLShaderType SHADER_TYPE>
     void attachShader(const GLShader<SHADER_TYPE>& shader) const {
@@ -88,9 +117,7 @@ public:
 };
 
 template <GLTextureTarget TARGET, GLsizei N = 1>
-class GLTexture : public GLPointerArray<
-                      [](GLsizei n, GLuint* textures) { glGenTextures(n, textures); },
-                      [](GLsizei n, GLuint* textures) { glDeleteTextures(n, textures); }, N> {
+class GLTexture : public GLPointerArray<genTextures, deleteTextures, N> {
 public:
     inline static void bind(const GLTexture& texture, size_t offset = 0) {
         glBindTexture(static_cast<GLenum>(TARGET), texture.handle(offset));
@@ -129,9 +156,7 @@ public:
 using GLTexture2D = GLTexture<GLTextureTarget::Texture2D>;
 
 template <GLsizei N = 1>
-class GLFrameBuffer : public GLPointerArray<
-                          [](GLsizei n, GLuint* framebuffers) { glGenFramebuffers(n, framebuffers); },
-                          [](GLsizei n, GLuint* framebuffers) { glDeleteFramebuffers(n, framebuffers); }, N> {
+class GLFrameBuffer : public GLPointerArray<genFramebuffers, deleteFramebuffers, N> {
 public:
     static void bind(const GLFrameBuffer& framebuffer, size_t offset = 0) {
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.handle(offset));
@@ -157,9 +182,7 @@ private:
 };
 
 template <GLsizei N = 1>
-class GLRenderBuffer : public GLPointerArray<
-                           [](GLsizei n, GLuint* renderbuffers) { glGenRenderbuffers(n, renderbuffers); },
-                           [](GLsizei n, GLuint* renderbuffers) { glDeleteRenderbuffers(n, renderbuffers); }, N> {
+class GLRenderBuffer : public GLPointerArray<genRenderbuffers, deleteRenderbuffers, N> {
 public:
     static void bind(const GLRenderBuffer& renderbuffer, size_t offset = 0) {
         glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer.handle(offset));

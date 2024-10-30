@@ -12,10 +12,21 @@ enum class GLBufferTarget {
     ShaderStorage = GL_SHADER_STORAGE_BUFFER
 };
 
+inline void genBuffers(GLsizei n, GLuint* buffers) {
+    glGenBuffers(n, buffers);
+}
+inline void deleteBuffers(GLsizei n, GLuint* buffers) {
+    glDeleteBuffers(n, buffers);
+}
+inline void genVertexArrays(GLsizei n, GLuint* arrays) {
+    glGenVertexArrays(n, arrays);
+}
+inline void deleteVertexArrays(GLsizei n, GLuint* arrays) {
+    glDeleteVertexArrays(n, arrays);
+}
+
 template <GLBufferTarget TARGET, GLsizei N = 1>
-class GLBuffer : public GLPointerArray<
-                     [](GLsizei n, GLuint* buffers) { glGenBuffers(n, buffers); },
-                     [](GLsizei n, GLuint* buffers) { glDeleteBuffers(n, buffers); }, N> {
+class GLBuffer : public GLPointerArray<genBuffers, deleteBuffers, N> {
 public:
     inline static void bind(const GLBuffer& buffer, size_t offset = 0) {
         glBindBuffer(static_cast<GLenum>(TARGET), buffer.handle(offset));
@@ -32,9 +43,7 @@ public:
 };
 
 template <GLsizei N = 1>
-class GLVertexArray : public GLPointerArray<
-                          [](GLsizei n, GLuint* arrays) { glGenVertexArrays(n, arrays); },
-                          [](GLsizei n, GLuint* arrays) { glDeleteVertexArrays(n, arrays); }, N> {
+class GLVertexArray : public GLPointerArray<genVertexArrays, deleteVertexArrays, N> {
 public:
     inline static void bind(const GLVertexArray& array, size_t offset = 0) { glBindVertexArray(array.handle(offset)); }
     inline static void unbind() { glBindVertexArray(0); }
