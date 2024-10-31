@@ -27,6 +27,7 @@ public:
 
     void applyCamera(const Camera& camera) const;
     void applyCubemap() const;
+    void applyExposure(float exposure) const;
 
     void render(const Camera& camera) const;
 
@@ -47,6 +48,10 @@ private:
     GLRenderBuffer<> _renderbuffer_irradiance;
     GLFrameBuffer<> _framebuffer_prefiltered;
     GLRenderBuffer<> _renderbuffer_prefiltered;
+
+    GLFrameBuffer<> _framebuffer;
+    GLRenderBuffer<> _renderbuffer;
+
     uint _res;
 
     void _renderToCubemap(const GLTexture2D& hdri_texture);

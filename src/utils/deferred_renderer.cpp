@@ -83,6 +83,7 @@ DeferredRenderer::DeferredRenderer(int width, int height) {
     _uniforms_lighting["u_irradiance_map"] = Uniform(_lighting, "u_irradiance_map");
     _uniforms_lighting["u_prefiltered_map"] = Uniform(_lighting, "u_prefiltered_map");
     _uniforms_lighting["u_brdf_lut"] = Uniform(_lighting, "u_brdf_lut");
+    _uniforms_lighting["u_exposure"] = Uniform(_lighting, "u_exposure");
 
     GLDebug::popGroup();
 }
@@ -162,6 +163,11 @@ void DeferredRenderer::setLight(const Light& light) {
     _uniforms_lighting["u_light_color"].set(light.color());
 }
 
+void DeferredRenderer::setExposure(float exposure) {
+    useLightingProgram();
+    _uniforms_lighting["u_exposure"].set(exposure);
+}
+
 void DeferredRenderer::draw(const Model& model) {
     model.vao.bind();
     glDrawElements(GL_TRIANGLES, model.index_count, GL_UNSIGNED_INT, nullptr);
@@ -199,6 +205,8 @@ void DeferredRenderer::endRender(const std::optional<GLFrameBuffer<>>& framebuff
         GLFrameBuffer<>::unbind();
     }
 
+    auto& lut = _brdfLUT();
+
     _lighting.use();
     _uniforms_lighting["u_position"].set(_g_position, 0);
     _uniforms_lighting["u_normal"].set(_g_normal, 1);
@@ -206,7 +214,7 @@ void DeferredRenderer::endRender(const std::optional<GLFrameBuffer<>>& framebuff
     _uniforms_lighting["u_metallic_roughness_ao"].set(_g_metallic_roughness_ao, 3);
     _uniforms_lighting["u_irradiance_map"].set(_skybox->irradiance(), 4);
     _uniforms_lighting["u_prefiltered_map"].set(_skybox->prefiltered(), 5);
-    _uniforms_lighting["u_brdf_lut"].set(_brdfLUT(), 6);
+    _uniforms_lighting["u_brdf_lut"].set(lut, 6);
     draw(quad());
     _g_position.unbind();
     _g_normal.unbind();

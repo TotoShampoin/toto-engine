@@ -11,9 +11,16 @@ A simple rendering engine that uses OpenGL.
   - [x] Irradiance map
   - [x] Specular IBL
 - [ ] Normal mapping
+- [ ] Shader preprocessor
+  - [ ] Macros
+  - [ ] Includes
 - [ ] Refactor things to a `Drawable` class
-  - A drawable has 2 draw functions, for forward and deferred rendering
-  - Either could be disabled
+  - [ ] Forward draw calls
+  - [ ] Deferred draw calls
+- [ ] Refactor the renderers
+  - [ ] Forward renderer
+  - [ ] Deferred renderer
+- [ ] Post processing
 - [ ] Line objects
   - [ ] Line shapes (arrows, gizmo)
   - [ ] Wireframes

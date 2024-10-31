@@ -24,6 +24,7 @@ Skybox::Skybox(uint res)
     uniforms["u_cubemap"] = Uniform(program, "u_cubemap");
     uniforms["u_projection"] = Uniform(program, "u_projection");
     uniforms["u_view"] = Uniform(program, "u_view");
+    uniforms["u_exposure"] = Uniform(program, "u_exposure");
 
     GLDebug::popGroup();
 }
@@ -38,6 +39,9 @@ Skybox::Skybox(const GLTexture2D& hdri_texture, uint res)
     GLFrameBuffer<>::bind(_framebuffer_irradiance);
     _renderbuffer_irradiance.storage(GL_DEPTH_COMPONENT24, 32, 32);
     _renderbuffer_irradiance.attach(GL_DEPTH_ATTACHMENT);
+    GLFrameBuffer<>::bind(_framebuffer_prefiltered);
+    _renderbuffer_prefiltered.storage(GL_DEPTH_COMPONENT24, 128, 128);
+    _renderbuffer_prefiltered.attach(GL_DEPTH_ATTACHMENT);
     GLFrameBuffer<>::unbind();
 
     _renderToCubemap(hdri_texture);
@@ -59,9 +63,18 @@ void Skybox::applyCubemap() const {
     auto& program = skyboxProgram();
     auto& uniforms = skyboxUniforms();
     auto& texture = _cubemap;
+    // auto& texture = _prefiltered;
+    // auto& texture = _irradiance;
 
     program.use();
     uniforms["u_cubemap"].set(texture, 0);
+}
+void Skybox::applyExposure(float exposure) const {
+    auto& program = skyboxProgram();
+    auto& uniforms = skyboxUniforms();
+
+    program.use();
+    uniforms["u_exposure"].set(exposure);
 }
 
 void Skybox::render(const Camera& camera) const {
@@ -87,34 +100,22 @@ void Skybox::render(const Camera& camera) const {
 void Skybox::_generateCubemaps() {
     GLDebug::pushGroup("Generate cubemaps");
 
-    auto generate = [](GLTexture<GLTextureTarget::TextureCubeMap>& map, uint res) {
-        map.parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        map.parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        map.parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        map.parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        map.parameter(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    auto generate = [](GLTexture<GLTextureTarget::TextureCubeMap>& map, uint res, GLenum min_filter = GL_LINEAR,
+                       GLenum mag_filter = GL_LINEAR) {
         for (int i = 0; i < 6; i++) {
             map.image2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, res, res, 0, GL_RGB, GL_FLOAT, nullptr);
         }
+        map.parameter(GL_TEXTURE_MIN_FILTER, min_filter);
+        map.parameter(GL_TEXTURE_MAG_FILTER, mag_filter);
+        map.parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        map.parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        map.parameter(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         map.generateMipmap();
     };
-    generate(_cubemap, _res);
+    generate(_cubemap, _res, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
     generate(_irradiance, 32);
-    // generate(_prefiltered, 128);
-    {
-        _prefiltered.bind();
-        _prefiltered.parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        _prefiltered.parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        _prefiltered.parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        _prefiltered.parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        _prefiltered.parameter(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        for (int i = 0; i < 6; i++) {
-            _prefiltered.image2D(
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 128, 128, 0, GL_RGB, GL_FLOAT, nullptr
-            );
-        }
-        _prefiltered.generateMipmap();
-    }
+    generate(_prefiltered, 128, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
     GLDebug::popGroup();
 }
@@ -171,6 +172,7 @@ void Skybox::_renderToCubemap(const GLTexture2D& hdri_texture) {
     auto u_view = Uniform(program, "u_view");
 
     renderCubemap(framebuffer, cubemap, hdri_texture, program, u_hdri, u_projection, u_view, _res, _res);
+    cubemap.generateMipmap();
 
     GLDebug::popGroup();
 }
@@ -209,12 +211,12 @@ void Skybox::_renderPrefiltered() {
     auto u_view = Uniform(program, "u_view");
     auto u_roughness = Uniform(program, "u_roughness");
 
+    framebuffer.bind();
     unsigned int max_mip_levels = 5;
     for (unsigned int mip = 0; mip < max_mip_levels; mip++) {
         unsigned int mip_width = 128 * std::pow(0.5, mip);
         unsigned int mip_height = 128 * std::pow(0.5, mip);
 
-        framebuffer.bind();
         renderbuffer.storage(GL_DEPTH_COMPONENT24, mip_width, mip_height);
         renderbuffer.attach(GL_DEPTH_ATTACHMENT);
 

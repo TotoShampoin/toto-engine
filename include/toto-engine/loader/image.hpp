@@ -37,8 +37,17 @@ GLTexture2D generateTexture2D(const Image2D<TYPE>& image, const TextureParameter
         default: throw std::runtime_error("Invalid number of channels");
         }
     }();
+    const GLenum internal_format = [&] {
+        switch (image.channels) {
+        case 1: return std::is_same_v<TYPE, unsigned char> ? GL_R8 : GL_R16F;
+        case 2: return std::is_same_v<TYPE, unsigned char> ? GL_RG8 : GL_RG16F;
+        case 3: return std::is_same_v<TYPE, unsigned char> ? GL_RGB8 : GL_RGB16F;
+        case 4: return std::is_same_v<TYPE, unsigned char> ? GL_RGBA8 : GL_RGBA16F;
+        default: throw std::runtime_error("Invalid number of channels");
+        }
+    }();
     const GLenum type = std::is_same_v<TYPE, unsigned char> ? GL_UNSIGNED_BYTE : GL_FLOAT;
-    const GLenum internal_format = format;
+    // const GLenum internal_format = format;
     texture.bind();
     texture.image2D(GL_TEXTURE_2D, 0, internal_format, image.width, image.height, 0, format, type, image.data.data());
     texture.parameter(GL_TEXTURE_WRAP_S, parameters.wrap_s);

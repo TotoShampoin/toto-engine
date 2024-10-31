@@ -1,12 +1,14 @@
 #version 330 core
-out vec4 f_color;
+
 in vec3 v_position;
+
+out vec4 f_color;
 
 uniform samplerCube u_cubemap;
 
 const float PI = 3.14159265359;
 
-void main() {		
+void main() {
     // the sample direction equals the hemisphere's orientation 
     vec3 normal = normalize(v_position);
 

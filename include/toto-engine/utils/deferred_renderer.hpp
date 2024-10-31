@@ -34,6 +34,7 @@ public:
     void setSkybox(const Skybox& skybox);
     void setMaterial(const Material& material);
     void setLight(const Light& light);
+    void setExposure(float exposure);
 
     void draw(const Model& model);
     void draw(const Model& model, const Material& material, const Transform& transform);

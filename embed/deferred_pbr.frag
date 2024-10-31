@@ -16,6 +16,7 @@ uniform vec3 u_light_color;
 uniform samplerCube u_irradiance_map;
 uniform samplerCube u_prefiltered_map;
 uniform sampler2D u_brdf_lut;
+uniform float u_exposure;
 
 uniform mat4 u_view;
 
@@ -65,7 +66,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 
 void main() {
     vec4 position = texture(u_position, v_texcoord);
-    vec3 normal = normalize(texture(u_normal, v_texcoord).xyz);
+    vec3 view_normal = normalize(texture(u_normal, v_texcoord).xyz);
     vec3 albedo = texture(u_albedo, v_texcoord).rgb;
     vec4 metallic_roughness_ao = texture(u_metallic_roughness_ao, v_texcoord);
 
@@ -76,7 +77,12 @@ void main() {
 
     vec3 view_direction = normalize(-position.xyz);
 
-    float NdotV = max(dot(normal, view_direction), 0.0);
+    mat3 inv_view = transpose(mat3(u_view));
+    vec3 world_normal = inv_view * view_normal;
+
+    vec3 world_direction = inv_view * view_direction;
+    float NdotV_view = max(dot(view_normal, view_direction), 0.0);
+    float NdotV_world = max(dot(world_normal, view_direction), 0.0);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
@@ -86,8 +92,8 @@ void main() {
         vec3 light_direction = mat3(u_view) * -u_light_direction;
         vec3 half_direction = normalize(light_direction + view_direction);
         float HdotV = max(dot(half_direction, view_direction), 0.0);
-        float NDF = DistributionGGX(normal, half_direction, roughness);
-        float G = GeometrySmith(normal, view_direction, light_direction, roughness);
+        float NDF = DistributionGGX(view_normal, half_direction, roughness);
+        float G = GeometrySmith(view_normal, view_direction, light_direction, roughness);
         vec3 F = fresnelSchlick(HdotV, F0);
 
         vec3 kS = F;
@@ -95,25 +101,25 @@ void main() {
         kD *= 1.0 - metallic;
 
         vec3 numerator = NDF * G * F;
-        float denominator = 4.0 * max(dot(normal, view_direction), 0.0) * max(dot(normal, light_direction), 0.0) + 0.0001;
+        float denominator = 4.0 * max(dot(view_normal, view_direction), 0.0) * max(dot(view_normal, light_direction), 0.0) + 0.0001;
         vec3 specular = numerator / denominator;
 
-        float NdotL = max(dot(normal, light_direction), 0.0);
+        float NdotL = max(dot(view_normal, light_direction), 0.0);
         light_out += (kD * albedo / PI + specular) * u_light_color * NdotL;
     }
 
     vec3 ambient;
     {
-        vec3 kS = fresnelSchlickRoughness(NdotV, F0, roughness);
+        vec3 kS = fresnelSchlickRoughness(NdotV_view, F0, roughness);
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
-        vec3 irradiance = texture(u_irradiance_map, normal).rgb;
+        vec3 irradiance = texture(u_irradiance_map, world_normal).rgb;
         vec3 diffuse = irradiance * albedo;
 
-        vec3 R = reflect(-view_direction, normal);
+        vec3 R = reflect(-world_direction, world_normal);
         const float MAX_REFLECTION_LOD = 4.0;
         vec3 prefiltered_color = textureLod(u_prefiltered_map, R, roughness * MAX_REFLECTION_LOD).rgb;
-        vec2 env_brdf = texture(u_brdf_lut, vec2(NdotV, roughness)).rg;
+        vec2 env_brdf = texture(u_brdf_lut, vec2(NdotV_view, roughness)).rg;
         vec3 specular = prefiltered_color * (kS * env_brdf.x + env_brdf.y);
         // vec3 specular = texture(u_prefiltered_map, R, roughness).rgb;
 
@@ -122,9 +128,12 @@ void main() {
 
     vec3 color = ambient + light_out;
 
-    color = color / (color + vec3(1.0));
+    // color = color / (color + vec3(1.0));
+    color = vec3(1.0) - exp(-color * u_exposure);
+
     color = pow(color, vec3(1.0 / 2.2));
 
     f_color = vec4(color, alpha);
+
     gl_FragDepth = position.z;
 }

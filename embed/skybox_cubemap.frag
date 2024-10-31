@@ -1,6 +1,8 @@
 #version 330 core
-out vec4 f_color;
+
 in vec3 v_position;
+
+out vec4 f_color;
 
 uniform sampler2D u_hdri;
 
