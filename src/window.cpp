@@ -11,6 +11,7 @@ Window::Window(int width, int height, const char* title, GLFWmonitor* monitor, G
     _handle = glfwCreateWindow(width, height, title, monitor, share);
     if (!_handle)
         throw std::runtime_error("Failed to create GLFW window\n");
+    _events.setCallbacks(_handle);
 }
 Window::~Window() {
     glfwDestroyWindow(_handle);
@@ -40,14 +41,18 @@ bool Window::shouldClose() const {
     return glfwWindowShouldClose(_handle);
 }
 
-GLFWwindow* Window::handle() const {
-    return _handle;
-}
-
 std::tuple<int, int> Window::size() const {
     int width, height;
     glfwGetWindowSize(_handle, &width, &height);
     return {width, height};
+}
+
+GLFWwindow* Window::handle() const {
+    return _handle;
+}
+
+WindowEvents& Window::events() {
+    return _events;
 }
 
 GLFW::GLFW() {

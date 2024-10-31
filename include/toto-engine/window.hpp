@@ -1,8 +1,37 @@
 #pragma once
+#include <functional>
 #include <toto-engine/import-gl.hpp>
 #include <tuple>
 
 namespace toto {
+
+class WindowEvents {
+public:
+    void onResize(std::function<void(int, int)> callback);
+    void onFramebufferResize(std::function<void(int, int)> callback);
+    void onMouseButton(std::function<void(int, int, int, int)> callback);
+    void onCursorPosition(std::function<void(double, double)> callback);
+    void onScroll(std::function<void(double, double)> callback);
+    void onKey(std::function<void(int, int, int, int)> callback);
+    void onChar(std::function<void(int, int, int, int)> callback);
+    void onCharMods(std::function<void(int, int, int, int)> callback);
+    void onDrop(std::function<void(int, int)> callback);
+
+private:
+    void setCallbacks(GLFWwindow* window);
+
+    std::function<void(int, int)> _resize_callback;
+    std::function<void(int, int)> _framebuffer_resize_callback;
+    std::function<void(int, int, int, int)> _mouse_button_callback;
+    std::function<void(double, double)> _cursor_position_callback;
+    std::function<void(double, double)> _scroll_callback;
+    std::function<void(int, int, int, int)> _key_callback;
+    std::function<void(int, int, int, int)> _char_callback;
+    std::function<void(int, int, int, int)> _char_mods_callback;
+    std::function<void(int, int)> _drop_callback;
+
+    friend class Window;
+};
 
 class Window {
 public:
@@ -19,12 +48,14 @@ public:
     void swapBuffers() const;
     bool shouldClose() const;
 
-    GLFWwindow* handle() const;
-
     std::tuple<int, int> size() const;
+
+    GLFWwindow* handle() const;
+    WindowEvents& events();
 
 private:
     GLFWwindow* _handle;
+    WindowEvents _events;
 };
 
 /**
