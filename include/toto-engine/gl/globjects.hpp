@@ -1,6 +1,6 @@
 #pragma once
 #include "glpointer.hpp"
-#include <glm/detail/qualifier.hpp>
+#include <glm/glm.hpp>
 #include <vector>
 
 namespace toto {
@@ -39,6 +39,12 @@ public:
     void data(const std::vector<T>& data, GLenum usage) const {
         bind(*this);
         glBufferData(static_cast<GLenum>(TARGET), data.size() * sizeof(T), data.data(), usage);
+    }
+
+    template <typename T>
+    void subData(const std::vector<T>& data, size_t offset) const {
+        bind(*this);
+        glBufferSubData(static_cast<GLenum>(TARGET), offset, data.size() * sizeof(T), data.data());
     }
 };
 
@@ -80,15 +86,26 @@ public:
      * @brief Set the Vertex Attrib Pointer
      *
      * @tparam VAOType The struct that you are using
-     * @tparam VecType The glm::vec type for the attribute. Only works for glm::vec<N, float, defaultp> (aka glm::vecN)
+     * @tparam AttrType The glm::vec type for the attribute.
      * @tparam OFFSET The offset of the attribute
      * @param index
      */
-    template <typename VAOType, typename VecType, size_t OFFSET>
+    template <typename VAOType, typename AttrType, size_t OFFSET>
     void setAttribPointer(GLuint index) const {
+        constexpr auto size = std::is_same_v<AttrType, glm::vec1>   ? 1
+                              : std::is_same_v<AttrType, glm::vec2> ? 2
+                              : std::is_same_v<AttrType, glm::vec3> ? 3
+                              : std::is_same_v<AttrType, glm::vec4> ? 4
+                                                                    : 1;
+
         bind();
         glEnableVertexAttribArray(index);
-        glVertexAttribPointer(index, VecType::length(), GL_FLOAT, GL_FALSE, sizeof(VAOType), (void*)OFFSET);
+        glVertexAttribPointer(index, size, GL_FLOAT, GL_FALSE, sizeof(VAOType), (void*)OFFSET);
+    }
+
+    void setAttribDivisor(GLuint index, GLuint divisor) const {
+        bind();
+        glVertexAttribDivisor(index, divisor);
     }
 };
 
